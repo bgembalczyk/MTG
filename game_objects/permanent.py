@@ -1,3 +1,4 @@
+from card_parts.name import Name
 from colors.color import Color
 from game_objects.game_object import GameObject
 from game_objects.card import Card
@@ -12,13 +13,13 @@ class PermanentObject(GameObject):
     abilities, power, toughness, loyalty, defense, hand modifier, and life modifier.
     """
 
-    def __init__(self, name: str, color: Color, rules_text: str):
+    def __init__(self, name: Name, color: Color, rules_text: str):
         super().__init__(rules_text=rules_text)
         self._name = name
         self._color = color
 
     @property
-    def name(self) -> str:
+    def name(self) -> Name:
         return self._name
 
     @property
@@ -40,7 +41,7 @@ class PermanentSpell(PermanentObject, Spell):
         self,
         owner: Player,
         controller: Player,
-        name: str,
+        name: Name,
         color: Color,
         rules_text: str,
     ):
@@ -54,7 +55,7 @@ class Permanent(PermanentObject):
         self,
         owner: Player,
         controller: Player,
-        name: str,
+        name: Name,
         color: Color,
         rules_text: str,
     ):
