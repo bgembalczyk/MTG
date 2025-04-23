@@ -2,6 +2,7 @@ from colors.color import Color
 from game_objects.game_object import GameObject
 from game_objects.card import Card
 from game_objects.spell import Spell
+from players.player import Player
 from status.status import Status, Tap, Flip, Facing, Phasing
 
 
@@ -35,13 +36,32 @@ class PermanentCard(PermanentObject, Card):
 
 
 class PermanentSpell(PermanentObject, Spell):
-    pass
+    def __init__(
+        self,
+        owner: Player,
+        controller: Player,
+        name: str,
+        color: Color,
+        rules_text: str,
+    ):
+        super().__init__(name=name, color=color, rules_text=rules_text)
+        self._owner = owner
+        self._controller = controller
 
 
 class Permanent(PermanentObject):
-    def __init__(self, name: str, color: Color, rules_text: str):
+    def __init__(
+        self,
+        owner: Player,
+        controller: Player,
+        name: str,
+        color: Color,
+        rules_text: str,
+    ):
         super().__init__(name=name, color=color, rules_text=rules_text)
         self._status = Status()
+        self._owner = owner
+        self._controller = controller
 
     @property
     def status(self) -> Status:

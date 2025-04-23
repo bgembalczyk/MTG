@@ -1,16 +1,15 @@
-# This is a sample Python script.
+import ssl
+import certifi
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+# Wymuszenie użycia certyfikatów z certifi
+ssl._create_default_https_context = lambda: ssl.create_default_context(
+    cafile=certifi.where()
+)
 
+from mtgsdk import Card
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f"Hi, {name}")  # Press ⌘F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
 if __name__ == "__main__":
-    print_hi("PyCharm")
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    # Get a card by its name
+    cards = Card.where(set="M21").all()
+    for card in cards:
+        print(card.name)
