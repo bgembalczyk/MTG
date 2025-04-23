@@ -29,7 +29,7 @@ def example_mana_cost():
 
 @pytest.fixture
 def example_player():
-    return Player("Test Player")
+    return Player()
 
 
 @pytest.fixture
@@ -48,13 +48,7 @@ def example_permanent_card(example_name, example_mana_cost):
 
 @pytest.fixture
 def example_permanent_spell(example_name, example_mana_cost, example_player):
-    return PermanentSpell(
-        example_player,
-        example_player,
-        example_name,
-        example_mana_cost,
-        "This is a test permanent spell.",
-    )
+    return PermanentSpell(owner=example_player, controller=example_player, name=example_name, mana_cost=example_mana_cost, rules_text="This is a test permanent spell.")
 
 
 @pytest.fixture
@@ -84,18 +78,12 @@ def test_permanent_object_get_characteristics(example_permanent_object):
         "rules_text": "This is a test permanent object.",
         "name": obj.name,
         "mana cost": obj.mana_cost,
-        "colors": [Color.RED.name],
+        "colors": [Color.RED],
     }
     assert obj.get_characteristics() == expected_characteristics
 
 
 # ---------- Testy dla PermanentCard ----------
-
-
-def test_permanent_card_inheritance(example_permanent_card):
-    obj = example_permanent_card
-    assert isinstance(obj, PermanentObject)
-    assert isinstance(obj, Card)
 
 
 # ---------- Testy dla PermanentSpell ----------

@@ -8,6 +8,9 @@ class Color(Enum):
     RED = "red"
     GREEN = "green"
 
+    def __str__(self):
+        return self.name
+
     @classmethod
     def from_symbol(cls, symbol: str):
         mapping = {

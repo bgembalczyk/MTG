@@ -11,6 +11,9 @@ class ManaSymbol:
         if not mana_symbol_regex.fullmatch(self.symbol):
             raise ValueError(f"Invalid mana symbol: {self.symbol}")
 
+    def __str__(self):
+        return self._symbol
+
     @property
     def symbol(self) -> str:
         return self._symbol
@@ -21,21 +24,23 @@ class ManaSymbol:
         mana_value = 0
         for symbol in symbols:
             try:
-                mana_value += int(symbol)
+                if mana_value < int(symbol):
+                    mana_value = int(symbol)
             except ValueError:
                 if symbol is not "X":
-                    mana_value += 1
+                    if mana_value < 1:
+                        mana_value = 1
         return mana_value
 
     @property
-    def color(self) -> set:
+    def colors(self) -> set:
         """
-        Returns the color of the mana symbol.
+        Returns the colors of the mana symbol.
         """
         colors = set()
         for symbol in self.split():
             try:
-                colors.update(Color.from_symbol(symbol))
+                colors.add(Color.from_symbol(symbol))
             except ValueError:
                 continue
         return colors
@@ -44,12 +49,15 @@ class ManaSymbol:
         """
         Splits the mana symbol into its components.
         """
-        return [self._symbol[i : i + 2] for i in range(1, len(self._symbol) - 1, 2)]
+        return self.symbol[1:-1].split("/")
 
 
 class ManaCost:
     def __init__(self, list_of_mana_symbols: list):
         self._list_of_mana_symbols = list_of_mana_symbols
+
+    def __str__(self):
+        "".join(str(symbol) for symbol in self.list_of_mana_symbols)
 
     @property
     def list_of_mana_symbols(self) -> list:
@@ -69,5 +77,5 @@ class ManaCost:
         """
         colors = set()
         for symbol in self.list_of_mana_symbols:
-            colors.add(symbol.color)
+            colors.update(symbol.colors)
         return colors
