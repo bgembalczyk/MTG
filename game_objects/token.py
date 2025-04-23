@@ -1,5 +1,5 @@
-from game_objects.game_object import GameObject
+from game_objects.permanent import PermanentObject
 
 
-class Token(GameObject):
+class TokenObject(PermanentObject):
     pass

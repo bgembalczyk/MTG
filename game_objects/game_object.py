@@ -5,7 +5,17 @@ class GameObject:
     """
 
     def __init__(self, rules_text: str):
+        self._owner = None
+        self._controller = None
         self._rules_text = rules_text
+
+    @property
+    def owner(self):
+        return self._owner
+
+    @property
+    def controller(self):
+        return self._controller
 
     @property
     def rules_text(self) -> str:
