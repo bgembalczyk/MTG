@@ -1,10 +1,23 @@
-from enum import IntEnum
+from enum import Enum
 
 
-class Color(IntEnum):
-    COLORLESS = 0
-    GREEN = 1
-    RED = 10
-    BLACK = 100
-    BLUE = 1000
-    WHITE = 10000
+class Color(Enum):
+    WHITE = "white"
+    BLUE = "blue"
+    BLACK = "black"
+    RED = "red"
+    GREEN = "green"
+
+    @classmethod
+    def from_symbol(cls, symbol: str):
+        mapping = {
+            "W": cls.WHITE,
+            "U": cls.BLUE,  # "U" = Blue w MTG
+            "B": cls.BLACK,
+            "R": cls.RED,
+            "G": cls.GREEN,
+        }
+        try:
+            return mapping[symbol.upper()]
+        except KeyError:
+            raise ValueError(f"Unknown color letter: '{symbol}'")
