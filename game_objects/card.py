@@ -29,5 +29,11 @@ class Card(GameObject):
 
     def get_characteristics(self) -> dict:
         characteristics = super().get_characteristics()
-        characteristics.update({"name": self.name, "mana cost": self.mana_cost, "colors": sorted(self.colors)})
+        characteristics.update(
+            {
+                "name": self.name,
+                "mana cost": self.mana_cost,
+                "colors": sorted(self.colors),
+            }
+        )
         return characteristics
