@@ -11,19 +11,21 @@ from MTG import static_abilities
 from MTG import utils
 
 
-class Characteristics():
-    def __init__(self,
-                 name='',
-                 mana_cost='',
-                 color=[],
-                 types=[],
-                 subtype=[],
-                 supertype=[],
-                 text='',
-                 abilities=[],
-                 power=None,
-                 toughness=None,
-                 loyalty=None):
+class Characteristics:
+    def __init__(
+        self,
+        name="",
+        mana_cost="",
+        color=[],
+        types=[],
+        subtype=[],
+        supertype=[],
+        text="",
+        abilities=[],
+        power=None,
+        toughness=None,
+        loyalty=None,
+    ):
         self.name = name
         self.mana_cost = mana_cost
         self.color = color
@@ -53,7 +55,7 @@ class Characteristics():
         return True
 
 
-class GameObject():
+class GameObject:
     is_player = False
     is_token = False
 
@@ -61,9 +63,14 @@ class GameObject():
     target_prompts = None  # list of strings
     targets_chosen = None
 
-    def __init__(self, characteristics=None,
-                 controller=None, owner=None, zone=None, 
-                 previousState=None):
+    def __init__(
+        self,
+        characteristics=None,
+        controller=None,
+        owner=None,
+        zone=None,
+        previousState=None,
+    ):
         if not characteristics:
             characteristics = Characteristics()
         self.characteristics = characteristics
@@ -71,16 +78,16 @@ class GameObject():
         self._owner = owner
         self.zone = zone
         self.previousState = previousState
-        self.effects = defaultdict(lambda: SortedListWithKey(
-                                           [], lambda x : x.timestamp))
+        self.effects = defaultdict(lambda: SortedListWithKey([], lambda x: x.timestamp))
 
         self.timestamp = self.game.timestamp if self.game else None
 
-
     def __repr__(self):
-        return '%r in %r (ID: %r)' % (self.name,
-                         self.zone.zone_type if self.zone is not None else 'None',
-                         id(self))
+        return "%r in %r (ID: %r)" % (
+            self.name,
+            self.zone.zone_type if self.zone is not None else "None",
+            id(self),
+        )
 
     def __str__(self):
         return str(self.name)
@@ -101,12 +108,12 @@ class GameObject():
 
     @property
     def is_permanent(self):
-        return self.zone.zone_type == 'BATTLEFIELD' if self.zone else False
+        return self.zone.zone_type == "BATTLEFIELD" if self.zone else False
 
     @property
     def is_spell(self):
         # TODO: what about abilities?
-        return self.zone.zone_type == 'STACK' if self.zone else False
+        return self.zone.zone_type == "STACK" if self.zone else False
 
     @property
     def name(self):
@@ -120,10 +127,10 @@ class GameObject():
     def manacost(self):
         cost = self.controller.mana.determine_costs(self.characteristics.mana_cost)
         # reduce/add costs
-        if self.effects['additionalCost']:
+        if self.effects["additionalCost"]:
             pass
 
-        for effect in self.effects['reduceCost']:
+        for effect in self.effects["reduceCost"]:
             pass
             # TODO
 
@@ -138,8 +145,10 @@ class GameObject():
 
     @property
     def is_basic_land(self):
-        return (cardtype.CardType.LAND in self.characteristics.types
-                and cardtype.SuperType.BASIC in self.characteristics.supertype)
+        return (
+            cardtype.CardType.LAND in self.characteristics.types
+            and cardtype.SuperType.BASIC in self.characteristics.supertype
+        )
 
     @property
     def is_creature(self):
@@ -163,12 +172,11 @@ class GameObject():
 
     @property
     def is_aura(self):
-        return self.is_enchantment and 'Aura' in self.characteristics.subtype
+        return self.is_enchantment and "Aura" in self.characteristics.subtype
 
     @property
     def is_equipment(self):
-        return self.is_artifact and 'Equipment' in self.characteristics.subtype
-
+        return self.is_artifact and "Equipment" in self.characteristics.subtype
 
     @property
     def power(self):
@@ -179,12 +187,14 @@ class GameObject():
         return self.characteristics.toughness if self.is_creature else None
 
     def has_ability(self, ability):
-        for effect in self.effects['gainAbility']:
+        for effect in self.effects["gainAbility"]:
             if ability in effect.value:
                 return True
 
-        ability = ability.replace(' ', '_')
-        return static_abilities.StaticAbilities[ability] in self.characteristics.abilities
+        ability = ability.replace(" ", "_")
+        return (
+            static_abilities.StaticAbilities[ability] in self.characteristics.abilities
+        )
 
     def share_color(self, other):
         return bool(set(self.characteristics.color) & set(other.characteristics.color))
@@ -193,7 +203,7 @@ class GameObject():
         return color in self.characteristics.color
 
     def is_color(self, color):
-        """ color is a list"""
+        """color is a list"""
         return color == self.characteristics.color
 
     @property
@@ -214,7 +224,6 @@ class GameObject():
     def exile(self):
         self.change_zone(self.owner.exile)
 
-
     ### Targeting ###
 
     def targets(self):
@@ -223,15 +232,15 @@ class GameObject():
             self.targets_chosen = targets_chosen
         return targets_chosen
 
+    """ Returns a list of booleans, signifying each target's legality """
 
-    ''' Returns a list of booleans, signifying each target's legality '''
     def target_legality(self):
-        if (not isinstance(self.targets_chosen, list) or 
-            not isinstance(self.target_criterias, list)):
+        if not isinstance(self.targets_chosen, list) or not isinstance(
+            self.target_criterias, list
+        ):
             return []
 
-        return [c(self, t) for c, t in 
-                zip(self.target_criterias, self.targets_chosen)]
+        return [c(self, t) for c, t in zip(self.target_criterias, self.targets_chosen)]
 
     def has_valid_target(self):
         if self.target_criterias is None:
@@ -241,9 +250,10 @@ class GameObject():
         # somewhere satisfies this criteria (i.e. is targetable)
         for crit in self.target_criterias:
             has_valid_target = False
-            for _zone in ['battlefield', 'stack',
-                          'graveyard', 'exile']:
-                has_valid_target = self.game.apply_to_zone(lambda _: True, _zone, lambda card: crit(self, card))
+            for _zone in ["battlefield", "stack", "graveyard", "exile"]:
+                has_valid_target = self.game.apply_to_zone(
+                    lambda _: True, _zone, lambda card: crit(self, card)
+                )
                 if has_valid_target:
                     break
 
@@ -257,7 +267,6 @@ class GameObject():
 
         return True
 
-
     def choose_targets(self):
         targets_chosen = utils.choose_targets(self)
         if isinstance(targets_chosen, list):
@@ -265,9 +274,9 @@ class GameObject():
 
         return targets_chosen
 
-
-    def change_zone(self, target_zone, from_top=0, shuffle=True,
-                    status_mod=None, modi_func=None):
+    def change_zone(
+        self, target_zone, from_top=0, shuffle=True, status_mod=None, modi_func=None
+    ):
         if target_zone == self.zone:
             return False
 

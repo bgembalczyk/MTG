@@ -54,7 +54,6 @@ class triggerConditions(Enum):
     onTakeCombatDamage = 28
     # global events
 
-
     onLifeLoss = 1000
     onControllerLifeLoss = 2000
     onLifeGain = 1001
@@ -72,5 +71,3 @@ class triggerConditions(Enum):
     onControllerPermanentEtB = 2031
     onCreatureEtB = 1032
     onControllerCreatureEtB = 2032
-
-

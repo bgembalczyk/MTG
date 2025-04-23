@@ -19,5 +19,5 @@ def check_valid_block(attacker, defender):
     # for creature in attacker.battlefield:
     #     if creature.is_creature:
     #         target = creature.status.is_attacking
-            # if target
+    # if target
     return True

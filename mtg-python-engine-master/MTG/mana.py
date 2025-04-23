@@ -5,7 +5,8 @@ from enum import Enum
 import re
 
 
-manachr = ['W', 'U', 'B', 'R', 'G', 'C', '1']
+manachr = ["W", "U", "B", "R", "G", "C", "1"]
+
 
 class Mana(Enum):
     WHITE = 0
@@ -17,15 +18,12 @@ class Mana(Enum):
     GENERIC = 6
 
 
-
-
-
 def str_to_mana_dict(manacost):
     cost = defaultdict(lambda: 0)
     for c in manacost:
         if c in manachr:
             cost[chr_to_mana(c)] += 1
-    num = re.match('\d+', manacost)  # find leading number
+    num = re.match("\d+", manacost)  # find leading number
     if num:
         cost[Mana.GENERIC] = int(num.group(0))
     return cost
@@ -33,25 +31,23 @@ def str_to_mana_dict(manacost):
 
 def chr_to_mana(c):
     assert c in manachr
-    if c == 'W':
+    if c == "W":
         return Mana.WHITE
-    if c == 'U':
+    if c == "U":
         return Mana.BLUE
-    if c == 'B':
+    if c == "B":
         return Mana.BLACK
-    if c == 'R':
+    if c == "R":
         return Mana.RED
-    if c == 'G':
+    if c == "G":
         return Mana.GREEN
-    if c == 'C':
+    if c == "C":
         return Mana.COLORLESS
-    if c == '1':
+    if c == "1":
         return Mana.GENERIC
 
 
-
-class ManaPool():
-
+class ManaPool:
     def __init__(self, controller=None):
         self.pool = defaultdict(lambda: 0)
         self.controller = controller
@@ -66,8 +62,6 @@ class ManaPool():
     def add_str(self, mana_str):
         for c in mana_str:
             self.add(chr_to_mana(c))
-
-
 
     def pay(self, manacost):
         if manacost is None:
@@ -84,33 +78,33 @@ class ManaPool():
                 return False
         return True
 
-
     def determine_costs(self, manacost):
-        """ Converts string mana costs to mana dict, resolving hybrid / additional costs"""
+        """Converts string mana costs to mana dict, resolving hybrid / additional costs"""
         cost = str_to_mana_dict(manacost)
 
         # hybrid mana costs
         # note the mana symbols will have already been scanned above, so we need to subtract the cost we're not paying
-        hybrid = re.findall('\([WUBRGC2]/[WUBRGC]\)', manacost)
+        hybrid = re.findall("\([WUBRGC2]/[WUBRGC]\)", manacost)
         for h in hybrid:
             if self.controller.autoPayMana:
-                choice = '0'
+                choice = "0"
             else:
                 choice = self.controller.make_choice(
-                    'How would you like to pay? 0 (default): {}\t 1: {}\n'.format(h[1], h[3]))
+                    "How would you like to pay? 0 (default): {}\t 1: {}\n".format(
+                        h[1], h[3]
+                    )
+                )
 
-            if choice == '1':
-                if h[1] != '2':
+            if choice == "1":
+                if h[1] != "2":
                     cost[chr_to_mana(h[1])] -= 1  # already scanned above
             else:  # default 0
                 cost[chr_to_mana(h[3])] -= 1
-                if h[1] == '2':
+                if h[1] == "2":
                     cost[Mana.GENERIC] += 2
-
 
         # TODO: define value of X
         return cost
-
 
     def canPay(self, manacost, convoke=False):
         """manacost here is a string, e.g. 2U, or a dict of Manas (e.g. {Mana.BLUE, 3})
@@ -132,12 +126,15 @@ class ManaPool():
 
         if genericMana > 0:
             if self.controller.autoPayMana:
-                choice = ''
+                choice = ""
             else:
                 choice = self.controller.make_choice(
-                    'How would you like to pay {}? Enter blank for automatic payment, or enter a string of colored mana\n'.format(genericMana))
+                    "How would you like to pay {}? Enter blank for automatic payment, or enter a string of colored mana\n".format(
+                        genericMana
+                    )
+                )
 
-            if re.match('[WUBRGC]+', choice) and len(choice) == genericMana:
+            if re.match("[WUBRGC]+", choice) and len(choice) == genericMana:
                 for c in choice:
                     manacost[chr_to_mana(c)] += 1
                 genericMana = 0
@@ -165,4 +162,6 @@ class ManaPool():
         self.pool.clear()
 
     def __repr__(self):
-        return '  '.join([str(manatype) + ': ' + str(self.pool[manatype]) for manatype in Mana])
+        return "  ".join(
+            [str(manatype) + ": " + str(self.pool[manatype]) for manatype in Mana]
+        )

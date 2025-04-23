@@ -2,6 +2,7 @@
 
 from enum import Enum
 
+
 class Phase(Enum):
     BEGINNING = 0
     PRECOMBAT_MAIN = 1
@@ -20,10 +21,10 @@ class Phase(Enum):
                 Step.DECLARE_BLOCKERS,
                 Step.FIRST_STRIKE_COMBAT_DAMAGE,
                 Step.COMBAT_DAMAGE,
-                Step.END_OF_COMBAT
+                Step.END_OF_COMBAT,
             ),
             Phase.POSTCOMBAT_MAIN: (Step.POSTCOMBAT_MAIN,),
-            Phase.ENDING: (Step.END, Step.CLEANUP)
+            Phase.ENDING: (Step.END, Step.CLEANUP),
         }[self]
 
 
@@ -57,5 +58,5 @@ class Step(Enum):
             Step.END_OF_COMBAT: Phase.COMBAT,
             Step.POSTCOMBAT_MAIN: Phase.POSTCOMBAT_MAIN,
             Step.END: Phase.ENDING,
-            Step.CLEANUP: Phase.ENDING
+            Step.CLEANUP: Phase.ENDING,
         }[self]

@@ -17,12 +17,14 @@ class Token(permanent.Permanent):
         self.controller.battlefield.add(self)
         self.is_token = True
 
-        self.activated_abilities = [abilities.ActivatedAbility(self, *params) for params in activated_abilities]
+        self.activated_abilities = [
+            abilities.ActivatedAbility(self, *params) for params in activated_abilities
+        ]
 
 
-creature_token_pattern = re.compile('\d/\d '
-                                    '((colorless)|(white)|(blue)|(black)|(red)|(green)) '
-                                    '[A-Za-z ]+')
+creature_token_pattern = re.compile(
+    "\d/\d ((colorless)|(white)|(blue)|(black)|(red)|(green)) [A-Za-z ]+"
+)
 
 
 # token_ability_dict = defaultdict(lambda: [])
@@ -30,47 +32,53 @@ creature_token_pattern = re.compile('\d/\d '
 # token_ability_dict['Thopter'] = [static_abilities.StaticAbilities.Flying]
 
 
-
-def create_token(attributes, controller, num=1, keyword_abilities=[], activated_abilities=[]):
+def create_token(
+    attributes, controller, num=1, keyword_abilities=[], activated_abilities=[]
+):
     if isinstance(attributes, str):
         if creature_token_pattern.match(attributes):
-            pt, color, *c_type = attributes.split(' ')
-            p, t = map(int, pt.split('/'))
+            pt, color, *c_type = attributes.split(" ")
+            p, t = map(int, pt.split("/"))
             types = [cardtype.CardType.CREATURE]
-            if 'artifact' in c_type:
+            if "artifact" in c_type:
                 types.append(cardtype.CardType.ARTIFACT)
-                c_type.remove('artifact')
+                c_type.remove("artifact")
         else:
             p, t = None, None
-            color, *c_type = attributes.split(' ')
+            color, *c_type = attributes.split(" ")
             types = [cardtype.CardType[c_type.pop().upper()]]
 
-        color = {'colorless': 'C',
-                 'white': 'W',
-                 'blue': 'U',
-                 'black': 'B',
-                 'red': 'R',
-                 'green': 'G'}[color]
+        color = {
+            "colorless": "C",
+            "white": "W",
+            "blue": "U",
+            "black": "B",
+            "red": "R",
+            "green": "G",
+        }[color]
 
-        name = ' '.join(c_type)
-        
+        name = " ".join(c_type)
+
         print("making token... %s" % attributes)
 
         if isinstance(keyword_abilities, str):
             keyword_abilities = [keyword_abilities]
-            print("with %s" % ' '.join(keyword_abilities))
+            print("with %s" % " ".join(keyword_abilities))
 
         for ablty in activated_abilities:
             ablty[0] = utils.parse_ability_costs(ablty[0])
 
-
         for i in range(num):
-            characteristics = gameobject.Characteristics(name='Token: %s' % name,
-                                                         types=types,
-                                                         power=p,
-                                                         toughness=t,
-                                                         subtype=c_type,
-                                                         color=[color],
-                                                         abilities=[static_abilities.StaticAbilities[a] for a in keyword_abilities])
+            characteristics = gameobject.Characteristics(
+                name="Token: %s" % name,
+                types=types,
+                power=p,
+                toughness=t,
+                subtype=c_type,
+                color=[color],
+                abilities=[
+                    static_abilities.StaticAbilities[a] for a in keyword_abilities
+                ],
+            )
 
             Token(characteristics, controller, activated_abilities)

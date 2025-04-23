@@ -17,8 +17,6 @@ from MTG import play
 from MTG import abilities
 
 
-
-
 # class Modifier():
 #     def __init__(self, target, modifications=[], to_apply=True):
 #         """
@@ -120,37 +118,44 @@ from MTG import abilities
 #             self.applied = False
 
 
-
-class Status():
+class Status:
     def __init__(self):
         self.reset()
 
     def __repr__(self):
         return str(self.__dict__)
 
-
     def __str__(self):
         s = []
-        s.append('tapped' if self.tapped else '')
-        s.append('will not untap for %i turns' % self.not_untap if self.not_untap else '')
-        s.append('flipped' if self.flipped else '')
-        s.append('face down' if not self.face_up else '')
-        s.append('phased out' if not self.phased_in else '')
-        s.append('is summoning sick' if self.summoning_sick else '')
-        s.append('has taken %i damage' % self.damage_taken if self.damage_taken else '')
-        s.append('is attacking %s' % str(self.is_attacking) if self.is_attacking else '')
-        s.append('is blocking %s' % str(self.is_blocking) if self.is_blocking else '')
-        s.extend(['has %i %s counters' % (num, name)
-                        for name, num in self.counters.items()
-                        if num > 0])
+        s.append("tapped" if self.tapped else "")
+        s.append(
+            "will not untap for %i turns" % self.not_untap if self.not_untap else ""
+        )
+        s.append("flipped" if self.flipped else "")
+        s.append("face down" if not self.face_up else "")
+        s.append("phased out" if not self.phased_in else "")
+        s.append("is summoning sick" if self.summoning_sick else "")
+        s.append("has taken %i damage" % self.damage_taken if self.damage_taken else "")
+        s.append(
+            "is attacking %s" % str(self.is_attacking) if self.is_attacking else ""
+        )
+        s.append("is blocking %s" % str(self.is_blocking) if self.is_blocking else "")
+        s.extend(
+            [
+                "has %i %s counters" % (num, name)
+                for name, num in self.counters.items()
+                if num > 0
+            ]
+        )
 
         # remove empty ''
-        return 'Status: ' + ', '.join([i for i in s if i])
-
+        return "Status: " + ", ".join([i for i in s if i])
 
     def reset(self):
         self.tapped = False
-        self.not_untap = 0  # 0: untap normally; 1: not untap next turn; math.inf: not untap
+        self.not_untap = (
+            0  # 0: untap normally; 1: not untap next turn; math.inf: not untap
+        )
         self.flipped = False
         self.face_up = True
         self.phased_in = True
@@ -161,10 +166,8 @@ class Status():
         self.counters = defaultdict(lambda: 0)
 
 
-
-
-class Effect():
-    """ name: name of effct (dict key to self.effects)
+class Effect:
+    """name: name of effct (dict key to self.effects)
 
     expiration: either a float representing timestamp (usually eot),
                 or a function (lambda eff: ...) that when evaluated to True signals expiration
@@ -173,22 +176,36 @@ class Effect():
         while active, the toggle function is negated; thus, it is passed into Effect(...)
         as a boolean dictionary (toggle_funcs)
     """
-    def __init__(self, value, timestamp, apply_target=None, source=None, expiration=math.inf, is_active=True,
-                 toggle_func=lambda eff: False):
+
+    def __init__(
+        self,
+        value,
+        timestamp,
+        apply_target=None,
+        source=None,
+        expiration=math.inf,
+        is_active=True,
+        toggle_func=lambda eff: False,
+    ):
         self.value = value
         self.source = source
         self.expiration = expiration
         self.is_active = is_active
-        self.toggle_funcs = {False: toggle_func,
-                             True: lambda eff: not toggle_func(eff)}
+        self.toggle_funcs = {False: toggle_func, True: lambda eff: not toggle_func(eff)}
         self.timestamp = timestamp
         self.apply_target = apply_target
 
 
-
 class Permanent(gameobject.GameObject):
-    def __init__(self, characteristics, controller, owner=None, original_card=None,
-                 status=None, modifications=[]):
+    def __init__(
+        self,
+        characteristics,
+        controller,
+        owner=None,
+        original_card=None,
+        status=None,
+        modifications=[],
+    ):
         self.characteristics = characteristics
         self.controller = controller
         self._owner = owner
@@ -199,12 +216,13 @@ class Permanent(gameobject.GameObject):
         # sort by timestamp
         # each self.effects[name] is a sortedlist of Effect
         # including (..., EXPIRATION_TIME, TIMESTAMP)
-        self.effects = defaultdict(lambda: SortedListWithKey(
-                                           [], lambda x : x.timestamp))
+        self.effects = defaultdict(lambda: SortedListWithKey([], lambda x: x.timestamp))
 
         for name, value, source, toggle_func in self.controller.static_effects:
             # apply existing static effects
-            self.add_effect(name, value, source=source, is_active=False, toggle_func=toggle_func)
+            self.add_effect(
+                name, value, source=source, is_active=False, toggle_func=toggle_func
+            )
 
         if status is None:
             if original_card and original_card.status:
@@ -216,54 +234,88 @@ class Permanent(gameobject.GameObject):
 
         if original_card:
             self.attributes = original_card.attributes
-            self.activated_abilities = [abilities.ActivatedAbility(self, *params)
-                                        for params in original_card.activated_abilities]
+            self.activated_abilities = [
+                abilities.ActivatedAbility(self, *params)
+                for params in original_card.activated_abilities
+            ]
             # params[0] is the trigger condition
-            self.trigger_listeners = {condition: [abilities.TriggeredAbility(self, *params) for params in trigs]
-                                      for condition, trigs in original_card.triggers.items()}
+            self.trigger_listeners = {
+                condition: [
+                    abilities.TriggeredAbility(self, *params) for params in trigs
+                ]
+                for condition, trigs in original_card.triggers.items()
+            }
             for condition in self.trigger_listeners:
-                if condition._value_ > 1000: # player-initiated trigger
-                    self.controller.trigger_listeners[condition].append((self, self.timestamp))
+                if condition._value_ > 1000:  # player-initiated trigger
+                    self.controller.trigger_listeners[condition].append(
+                        (self, self.timestamp)
+                    )
 
             self.continuous_effects = original_card.continuous_effects
 
             for apply_to, name, value, toggle_func in original_card.static_effects:
-                if apply_to == 'self':
-                    self.add_effect(name, value, source=self, is_active=False, toggle_func=toggle_func)
-                elif apply_to == 'controller':
-                    self.controller.add_static_effect(name, value, source=self, toggle_func=toggle_func)
-                elif apply_to == 'game':
-                    self.game.add_static_effect(name, value, source=self, toggle_func=toggle_func)
-                elif apply_to == 'controller -self':  # does not apply ability to self (e.g. 'other creatures ...')
-                    self.controller.add_static_effect(name, value, source=self, toggle_func=toggle_func, exempt_source=True)
-                elif apply_to == 'game -self':
-                    self.game.add_static_effect(name, value, source=self, toggle_func=toggle_func, exempt_source=True)
+                if apply_to == "self":
+                    self.add_effect(
+                        name,
+                        value,
+                        source=self,
+                        is_active=False,
+                        toggle_func=toggle_func,
+                    )
+                elif apply_to == "controller":
+                    self.controller.add_static_effect(
+                        name, value, source=self, toggle_func=toggle_func
+                    )
+                elif apply_to == "game":
+                    self.game.add_static_effect(
+                        name, value, source=self, toggle_func=toggle_func
+                    )
+                elif (
+                    apply_to == "controller -self"
+                ):  # does not apply ability to self (e.g. 'other creatures ...')
+                    self.controller.add_static_effect(
+                        name,
+                        value,
+                        source=self,
+                        toggle_func=toggle_func,
+                        exempt_source=True,
+                    )
+                elif apply_to == "game -self":
+                    self.game.add_static_effect(
+                        name,
+                        value,
+                        source=self,
+                        toggle_func=toggle_func,
+                        exempt_source=True,
+                    )
 
         else:
             self.attributes = []
             self.activated_abilities = []
             self.trigger_listeners = {}
-            self.continuous_effects = ''
+            self.continuous_effects = ""
 
-  
         self.is_token = False
         self.auras = []
         self.equipments = []
         # pdb.set_trace()
 
     def __repr__(self):
-        return (self.__str__() +
-                '\nowner: %s\n' % str(self.owner if self.owner else 'None') +
-                str(self.status))
+        return (
+            self.__str__()
+            + "\nowner: %s\n" % str(self.owner if self.owner else "None")
+            + str(self.status)
+        )
 
     def __str__(self):
-        return ('%s controlled by %s (timestamp: %s)' % (
-                super(Permanent, self).__repr__(),
-                str(self.controller if self.controller else 'None'),
-                self.timestamp))
+        return "%s controlled by %s (timestamp: %s)" % (
+            super(Permanent, self).__repr__(),
+            str(self.controller if self.controller else "None"),
+            self.timestamp,
+        )
 
     def __eq__(self, other):
-        """ Check equality based on both ID and timestamp"""
+        """Check equality based on both ID and timestamp"""
         if isinstance(other, self.__class__):
             return id(self) == id(other) and self.timestamp == other.timestamp
         return NotImplemented
@@ -280,24 +332,41 @@ class Permanent(gameobject.GameObject):
         print("activating ability... {}".format(self.activated_abilities[num]))
         # pdb.set_trace()
         # self._activated_abilities_effects[num](self)
-        name = self.name + ' activated ability #' + str(num)
+        name = self.name + " activated ability #" + str(num)
         return play.Play(
-                    lambda: self.activated_abilities[num].resolve(), source=self.activated_abilities[num],
-                    name=name, is_mana_ability=self.activated_abilities[num].is_mana_ability)
+            lambda: self.activated_abilities[num].resolve(),
+            source=self.activated_abilities[num],
+            name=name,
+            is_mana_ability=self.activated_abilities[num].is_mana_ability,
+        )
 
     # def clear_modifier(self):
     #     """Clears end-of-turn effects"""
     #     self.modifier.reset()
 
-    def add_effect(self, name, value, source=None, expiration=math.inf,
-                   is_active=True, toggle_func=lambda eff: True):
+    def add_effect(
+        self,
+        name,
+        value,
+        source=None,
+        expiration=math.inf,
+        is_active=True,
+        toggle_func=lambda eff: True,
+    ):
         if expiration == math.inf and source:
             # static effect; auto expries if source expires
             t = source.timestamp
             expiration = lambda eff: eff.source.timestamp != t
 
-        eff = Effect(value, self.controller.game.timestamp, self, source,
-                     expiration, is_active, toggle_func)
+        eff = Effect(
+            value,
+            self.controller.game.timestamp,
+            self,
+            source,
+            expiration,
+            is_active,
+            toggle_func,
+        )
         self.effects[name].add(eff)
         self.check_effect_expiration()
 
@@ -330,9 +399,6 @@ class Permanent(gameobject.GameObject):
 
         return did_something
 
-
-
-
     def tap(self):
         if not self.status.tapped:
             self.status.tapped = True
@@ -351,7 +417,7 @@ class Permanent(gameobject.GameObject):
         return False
 
     def freeze(self):
-        """ Does not untap next turn """
+        """Does not untap next turn"""
         if self.status.not_untap == 0:
             self.status.not_untap = 1
 
@@ -382,14 +448,14 @@ class Permanent(gameobject.GameObject):
         toughness = self.characteristics.toughness
 
         # layer 7b
-        for effect in self.get_effect('setPT'):
-            if effect.value[0] != '*':  # keep it as is
+        for effect in self.get_effect("setPT"):
+            if effect.value[0] != "*":  # keep it as is
                 power = effect.value[0]
-            if effect[1] != '*':
+            if effect[1] != "*":
                 toughness = effect.value[1]
 
         # layer 7c
-        for effect in self.get_effect('modifyPT'):
+        for effect in self.get_effect("modifyPT"):
             power += effect.value[0]
             toughness += effect.value[1]
 
@@ -397,19 +463,26 @@ class Permanent(gameobject.GameObject):
         power += self.status.counters["+1/+1"] - self.status.counters["-1/-1"]
         toughness += self.status.counters["+1/+1"] - self.status.counters["-1/-1"]
 
-        for effect in self.get_effect('switchPT'):  # layer 7e
+        for effect in self.get_effect("switchPT"):  # layer 7e
             power, toughness = toughness, power
 
         return power, toughness
 
     @property
     def is_summoning_sick(self):
-        return (self.is_creature and self.status.summoning_sick
-                    and not self.has_ability("Haste"))
+        return (
+            self.is_creature
+            and self.status.summoning_sick
+            and not self.has_ability("Haste")
+        )
 
     def can_attack(self):
-        return (self.is_creature and not self.status.tapped
-                and not self.is_summoning_sick and not self.has_ability("Defender"))
+        return (
+            self.is_creature
+            and not self.status.tapped
+            and not self.is_summoning_sick
+            and not self.has_ability("Defender")
+        )
 
     def can_block(self, attackers=None):
         if attackers:
@@ -420,17 +493,20 @@ class Permanent(gameobject.GameObject):
                 return False
 
             for attacker in attackers:
-                if (attacker.has_ability('Flying')
-                    and not (self.has_ability('Flying')
-                             or self.has_ability('Reach'))):
+                if attacker.has_ability("Flying") and not (
+                    self.has_ability("Flying") or self.has_ability("Reach")
+                ):
                     return False
 
-                if (attacker.has_ability('Intimidate')
-                        and not (self.is_artifact or self.share_color(attacker))):
+                if attacker.has_ability("Intimidate") and not (
+                    self.is_artifact or self.share_color(attacker)
+                ):
                     return False
 
                 for landtype in ["Plains", "Island", "Swamp", "Mountain", "Forest"]:
-                    if attacker.has_ability(landtype+"walk") and self.controller.controls(subtype=landtype):
+                    if attacker.has_ability(
+                        landtype + "walk"
+                    ) and self.controller.controls(subtype=landtype):
                         return False
 
                 # TODO: other blocking restrictions (e.g. can't block alone)
@@ -471,9 +547,9 @@ class Permanent(gameobject.GameObject):
             source = source.card
 
         # trigger based on source
-        self.trigger('onTakeDamage', source, dmg)
+        self.trigger("onTakeDamage", source, dmg)
         if is_combat:
-            self.trigger('onTakeCombatDamage', source, dmg)
+            self.trigger("onTakeCombatDamage", source, dmg)
 
         self.status.damage_taken += dmg
         print("{} takes {} damage from {}\n".format(self, dmg, source))
@@ -482,15 +558,15 @@ class Permanent(gameobject.GameObject):
         # pdb.set_trace()
 
     def deals_damage(self, target, dmg, is_combat=False):
-        """ target could be Player, Creature, or array of creatures"""
+        """target could be Player, Creature, or array of creatures"""
 
         ## TODO: deal damage NOT trigger if dmg is prevented
         if dmg < 0:
             return
 
-        self.trigger('onDealDamage', target, dmg)
+        self.trigger("onDealDamage", target, dmg)
         if is_combat:
-            self.trigger('onCombatDamage', target, dmg)
+            self.trigger("onCombatDamage", target, dmg)
 
         if isinstance(target, list):
             dmg_to_assign = self.power
@@ -518,32 +594,31 @@ class Permanent(gameobject.GameObject):
         else:
             # a single creature or a player
             if target.is_player:
-                self.trigger('onDealDamageToPlayers', target, dmg)
+                self.trigger("onDealDamageToPlayers", target, dmg)
                 if is_combat:
-                    self.trigger('onCombatDamageToPlayers', target, dmg)
+                    self.trigger("onCombatDamageToPlayers", target, dmg)
             else:
-                self.trigger('onDealDamageToCreature', target, dmg)
+                self.trigger("onDealDamageToCreature", target, dmg)
                 if is_combat:
-                    self.trigger('onCombatDamageToCreatures', target, dmg)
+                    self.trigger("onCombatDamageToCreatures", target, dmg)
             target.take_damage(self, dmg, is_combat)
 
         # TODO: check damage actually went through
         if self.has_ability("Lifelink"):
             self.controller.gain_life(dmg)
 
-
     def trigger(self, condition, source=None, amount=1):
-        """ amount: amount of life gained, damage dealt, etc. """
+        """amount: amount of life gained, damage dealt, etc."""
         # TODO: more triggers
         # technically, these aren't "triggers"; but putting them here suffices
 
         if isinstance(condition, str):
             condition = triggers.triggerConditions[condition]
 
-
         if condition in self.trigger_listeners:
-            trigs = [trig for trig in self.trigger_listeners[condition]
-                     if trig is not None]
+            trigs = [
+                trig for trig in self.trigger_listeners[condition] if trig is not None
+            ]
             for trig in trigs:
                 trig.trigger_amount = amount
                 trig.trigger_source = source
@@ -552,12 +627,15 @@ class Permanent(gameobject.GameObject):
 
             self.controller.pending_triggers.extend(trigs)
 
-    def change_zone(self, target_zone, from_top=0, shuffle=True,
-                    status_mod=None, modi_func=None):
+    def change_zone(
+        self, target_zone, from_top=0, shuffle=True, status_mod=None, modi_func=None
+    ):
         for aura in self.auras[:]:
             aura.disenchant()
 
-        return super(Permanent, self).change_zone(target_zone, from_top, shuffle, status_mod, modi_func)
+        return super(Permanent, self).change_zone(
+            target_zone, from_top, shuffle, status_mod, modi_func
+        )
 
     def dies(self):
         # trigger first so we can use last-known state (while it's still a permanent)
@@ -565,12 +643,12 @@ class Permanent(gameobject.GameObject):
         # we need to somehow mark this card as not being on battlefield
         # e.g. change zones
         # yet still remember last known states
-        self.trigger('onDeath')
+        self.trigger("onDeath")
         print("{} has died\n".format(self))
         return self.change_zone(self.owner.graveyard)
 
     def destroy(self):
-        #trigger
+        # trigger
         if self.has_ability("Indestructible") and self.toughness > 0:
             print("Indestructible")
             return False
@@ -579,7 +657,7 @@ class Permanent(gameobject.GameObject):
             return True
 
     def sacrifice(self):
-        #trigger
+        # trigger
         print("Sacrificing")
         if self.dies():
             return True
@@ -595,16 +673,20 @@ class Permanent(gameobject.GameObject):
         self.change_zone(self.owner.battlefield)
 
 
-
-
 class Aura(Permanent):
-    def __init__(self, enchant_target, characteristics, controller, owner=None, original_card=None):
+    def __init__(
+        self,
+        enchant_target,
+        characteristics,
+        controller,
+        owner=None,
+        original_card=None,
+    ):
         super(Aura, self).__init__(characteristics, controller, owner, original_card)
 
         self.enchant(enchant_target)
 
         eval(self.continuous_effects)
-
 
     def enchant(self, target):
         target.auras.append(self)
@@ -618,13 +700,21 @@ class Aura(Permanent):
     def add_ability(self, ability):
         enchanted_creature = self.enchant_target
         # not sure how to dynamically check this & make sure all associations expire/update correctly
-        enchanted_creature.add_effect("gainAbility", ability, self, lambda eff: eff.source.enchant_target != enchanted_creature)
+        enchanted_creature.add_effect(
+            "gainAbility",
+            ability,
+            self,
+            lambda eff: eff.source.enchant_target != enchanted_creature,
+        )
 
     def add_pt(self, PT):
         enchanted_creature = self.enchant_target
-        enchanted_creature.add_effect("modifyPT", PT, self, lambda eff: eff.source.enchant_target != enchanted_creature)
-
-
+        enchanted_creature.add_effect(
+            "modifyPT",
+            PT,
+            self,
+            lambda eff: eff.source.enchant_target != enchanted_creature,
+        )
 
 
 def make_permanent(card, status_mod=None, modi_func=None):

@@ -18,9 +18,7 @@ from MTG.exceptions import *
 
 
 class Game(object):
-    """A game object. This represents the entire state of an in-progress MTG game.
-
-    """
+    """A game object. This represents the entire state of an in-progress MTG game."""
 
     # Give each player their deck.
     def __init__(self, decks, test=False):
@@ -33,17 +31,19 @@ class Game(object):
         self.test = test
         self.turn_num = 0
         self.num_players = len(decks)
-        self.players_list = [player.Player(decks[i], 'player' + str(i), game=self)
-                             for i in range(self.num_players)]
+        self.players_list = [
+            player.Player(decks[i], "player" + str(i), game=self)
+            for i in range(self.num_players)
+        ]
         # self.players = cycle(self.players_list)
 
         # self.previous_state = GAME_PREVIOUS_STATE
 
     @property
     def timestamp(self):
-        return (self.turn_num * 100
-                + self.step._value_
-                + time.time() % 10**4 / 10**4)  # this is a float less than 1
+        return (
+            self.turn_num * 100 + self.step._value_ + time.time() % 10**4 / 10**4
+        )  # this is a float less than 1
 
     @property
     def eot_time(self):
@@ -74,13 +74,11 @@ class Game(object):
         for p in self.players_list:
             p.trigger(condition, source, amount)
 
-
     def apply_stack_item(self, stack_item):
-        """ resolving a spell/effect from stack, removing it from the stack """
+        """resolving a spell/effect from stack, removing it from the stack"""
         print(stack_item)
         stack_item.apply()
         self.stack.remove(stack_item)
-
 
     def apply_to_zone(self, apply_func, _zone, condition=lambda p: True):
         """Apply some function to all cards in a certain zone
@@ -94,40 +92,45 @@ class Game(object):
         if isinstance(_zone, str):
             _zone = zone.str_to_zone_type(_zone)
 
-        did_something = any([plyr.apply_to_zone(apply_func, _zone, condition)
-                             for plyr in self.players_list])
+        did_something = any(
+            [
+                plyr.apply_to_zone(apply_func, _zone, condition)
+                for plyr in self.players_list
+            ]
+        )
 
         return did_something
 
-
     def apply_to_battlefield(self, apply_func, condition=lambda p: True):
         return self.apply_to_zone(apply_func, zone.ZoneType.BATTLEFIELD, condition)
-
 
     # TODO
     def apply_state_based_actions(self):
         # iterate through cards that could possibly cause a state-based action
         _any_action = False
+
         def any_action():
             nonlocal _any_action
             _any_action = True
 
         self.apply_to_battlefield(
             lambda p: any_action() if p.zone.remove(p) else None,
-            lambda p: p.is_token and not p.zone.is_battlefield)
+            lambda p: p.is_token and not p.zone.is_battlefield,
+        )
 
         self.apply_to_battlefield(
-            lambda p: any_action() if p.check_effect_expiration() else None)
+            lambda p: any_action() if p.check_effect_expiration() else None
+        )
 
         self.apply_to_battlefield(
             lambda p: any_action() if p.destroy() else None,
-            lambda p: p.is_creature and
-                      p.status.damage_taken >= p.toughness)
+            lambda p: p.is_creature and p.status.damage_taken >= p.toughness,
+        )
 
         self.apply_to_battlefield(
             lambda p: any_action() if p.change_zone(p.owner.graveyard) else None,
-            lambda p: p.is_aura and
-                      p.enchant_target is None)
+            lambda p: p.is_aura and p.enchant_target is None,
+        )
 
         # check for player death
         for _player in self.players_list:
@@ -145,8 +148,6 @@ class Game(object):
             print("Applying state based actions")
             self.apply_state_based_actions()
 
-
-
     def handle_priority(self, step, priority=None):
         # priority tracks the index of the player that currently have priority
         if priority is None:
@@ -160,18 +161,18 @@ class Game(object):
             #       UNTIL none avaliable
             self.apply_state_based_actions()
 
-
             for p in self.APNAP:
                 if p.pending_triggers:
                     # ask player for order
                     triggers = []
                     if len(p.pending_triggers) > 1 and not p.autoOrderTriggers:
-                        ans = p.make_choice("Current triggers: %r\n"
-                                            "Would you like to order them, %r?\n"
-                                            "Enter a space separated list of indices, "
-                                            "starting from the trigger you'd like to put on the"
-                                            "bottom of the stack.\n"
-                                            % (p.pending_triggers, p))
+                        ans = p.make_choice(
+                            "Current triggers: %r\n"
+                            "Would you like to order them, %r?\n"
+                            "Enter a space separated list of indices, "
+                            "starting from the trigger you'd like to put on the"
+                            "bottom of the stack.\n" % (p.pending_triggers, p)
+                        )
 
                         try:
                             ans = ans.split(" ")
@@ -204,7 +205,6 @@ class Game(object):
                 # this allows us to manipulate game state without anyone receiving priority
                 _play = self.players_list[priority].get_action()
 
-
             if _play is None:  # a player passes priority
                 self.passed_priority += 1
                 priority = (priority + 1) % self.num_players
@@ -214,7 +214,7 @@ class Game(object):
                     self.passed_priority = 0
                     priority = self.players_list.index(self.current_player)
 
-            elif _play == '__continue':
+            elif _play == "__continue":
                 pass  # debug
             else:
                 # new thing on top of stack; must have everyone re-pass priority
@@ -228,8 +228,9 @@ class Game(object):
 
     def handle_beginning_phase(self, step):
         if step is gamesteps.Step.UNTAP:
-            self.apply_to_battlefield(lambda p: p.untap(),
-                                      lambda p: p.controller is self.current_player)
+            self.apply_to_battlefield(
+                lambda p: p.untap(), lambda p: p.controller is self.current_player
+            )
             for _player in self.players_list:
                 _player.landPlayed = 0
 
@@ -248,7 +249,6 @@ class Game(object):
     def handle_main_phase(self, step):
         self.handle_priority(step)
 
-
     # TODO
     def handle_combat_phase(self, step):
         if step is gamesteps.Step.BEGINNING_OF_COMBAT:
@@ -264,7 +264,6 @@ class Game(object):
             self.trigger(triggers.triggerConditions.onEndofCombat)
 
         if step is gamesteps.Step.DECLARE_ATTACKERS:
-
             # GAME_PREVIOUS_STATE = deepcopy(self)
             ok = False
             while not ok:
@@ -273,7 +272,8 @@ class Game(object):
                 avaliable_attackers = []
                 self.apply_to_battlefield(
                     lambda p: avaliable_attackers.append(p),
-                    lambda p: p.controller == self.current_player and p.can_attack())
+                    lambda p: p.controller == self.current_player and p.can_attack(),
+                )
 
                 if not avaliable_attackers:  # no attacks; skip rest of combat
                     for p in self.players_list:
@@ -290,8 +290,10 @@ class Game(object):
                     # declare attackers
                     # space-separated list of indices of creatures in avaliable_attackers, starting at 0
                     answer = self.current_player.make_choice(
-                        "\n{}, Choose all creatures you'd like to attack {} with\n"
-                        .format(self.current_player, defender.name))
+                        "\n{}, Choose all creatures you'd like to attack {} with\n".format(
+                            self.current_player, defender.name
+                        )
+                    )
                     if self.test:
                         print(answer)
 
@@ -302,13 +304,18 @@ class Game(object):
                             for ind in answer:
                                 ind = int(ind)
                                 if ind < len(avaliable_attackers):
-                                    pending_attackers[defender].append(avaliable_attackers[ind])
+                                    pending_attackers[defender].append(
+                                        avaliable_attackers[ind]
+                                    )
                                     # avaliable_attackers[ind].attacks(
-                                        # defender)
+                                    # defender)
 
                                 else:
-                                    print("creature #{} is out of bounds\n"
-                                          .format(str(ind)))
+                                    print(
+                                        "creature #{} is out of bounds\n".format(
+                                            str(ind)
+                                        )
+                                    )
                                     continue
 
                         except:
@@ -338,8 +345,11 @@ class Game(object):
                             atkr.attacks(defender)
 
             for creature in avaliable_attackers:
-                print("{} is attacking {}\n".format(
-                    creature.name, creature.status.is_attacking))
+                print(
+                    "{} is attacking {}\n".format(
+                        creature.name, creature.status.is_attacking
+                    )
+                )
 
             # check remove-from-combat abilities/events
 
@@ -354,34 +364,43 @@ class Game(object):
                 pending_blocks = []
 
                 for defender in self.players_list:
-                    if defender == self.current_player:  # only current player's opponents need to block
+                    if (
+                        defender == self.current_player
+                    ):  # only current player's opponents need to block
                         continue
 
                     currently_attacking = []  # get all attacking creatures
                     self.apply_to_battlefield(
                         lambda p: currently_attacking.append(p),
-                        lambda p: p.status.is_attacking == defender)
+                        lambda p: p.status.is_attacking == defender,
+                    )
 
                     if currently_attacking:
-                        print("Creatures attacking {}: {}\n\n".format(
-                            defender, currently_attacking))
+                        print(
+                            "Creatures attacking {}: {}\n\n".format(
+                                defender, currently_attacking
+                            )
+                        )
 
                         can_block = []
                         self.apply_to_battlefield(
                             lambda p: can_block.append(p),
-                            lambda p: p.controller == defender and p.can_block())
+                            lambda p: p.controller == defender and p.can_block(),
+                        )
 
                         if can_block:
                             print("Potential blockers: {}\n".format(can_block))
 
                             # declare blockers
 
-
                             for attacking_creature in currently_attacking:
                                 _ok = False
                                 while not _ok:
-                                    answer = defender.make_choice("\n{}, Choose all creatures you'd like to block {} with\n"
-                                                                  .format(defender, attacking_creature))
+                                    answer = defender.make_choice(
+                                        "\n{}, Choose all creatures you'd like to block {} with\n".format(
+                                            defender, attacking_creature
+                                        )
+                                    )
 
                                     if self.test:
                                         print(answer)
@@ -394,18 +413,22 @@ class Game(object):
                                         for ind in answer:
                                             ind = int(ind)
                                             if ind < len(can_block):
-                                                pending_blocks.append((can_block[ind], attacking_creature))
+                                                pending_blocks.append(
+                                                    (can_block[ind], attacking_creature)
+                                                )
                                             else:
                                                 print(
-                                                    "creature #{} is out of bounds\n".format(ind))
+                                                    "creature #{} is out of bounds\n".format(
+                                                        ind
+                                                    )
+                                                )
                                                 continue
 
                                         _ok = True
 
                                     except:
                                         traceback.print_exc()
-                                        print(
-                                            "wrong format: {}\n".format(answer))
+                                        print("wrong format: {}\n".format(answer))
 
                     # TODO: attacker declare multi-block dmg order
                     # TODO: check for menace
@@ -413,17 +436,15 @@ class Game(object):
                     # simulate blocker.blocks(attacker) without causing any triggers
                     for blocker, attacker in pending_blocks:
                         blocker.status.is_blocking.append(attacker)
-                    ok = combat.check_valid_block(
-                        self.current_player, defender)
+                    ok = combat.check_valid_block(self.current_player, defender)
 
                     # clear simulation
                     for blocker, attacker in pending_blocks:
                         blocker.status.is_blocking.remove(attacker)
 
-
                     if not ok:
                         print("Illegal block; rewind\n\n")
-                        
+
                         # self = GAME_PREVIOUS_STATE
                         break
                     else:
@@ -432,42 +453,50 @@ class Game(object):
                             blocker.blocks(attacker)
 
             for creature in currently_attacking:
-                print("{} is attacking {}\n".format(
-                    creature.name, creature.status.is_attacking))
+                print(
+                    "{} is attacking {}\n".format(
+                        creature.name, creature.status.is_attacking
+                    )
+                )
 
         if step is gamesteps.Step.FIRST_STRIKE_COMBAT_DAMAGE:
             # if no first strikes avaliable, skip to combat damage
             if not self.apply_to_battlefield(
-                    lambda p: p.deals_damage(
-                        p.status.is_attacking, p.power, is_combat=True),
-                    lambda p: p.status.is_attacking and (p.has_ability("First Strike")
-                                                         or p.has_ability("Double Strike"))):
-
+                lambda p: p.deals_damage(
+                    p.status.is_attacking, p.power, is_combat=True
+                ),
+                lambda p: p.status.is_attacking
+                and (p.has_ability("First Strike") or p.has_ability("Double Strike")),
+            ):
                 for p in self.players_list:
                     if p.passPriorityUntil is None:
                         p.passPriorityUntil = gamesteps.Step.COMBAT_DAMAGE
 
-
         if step is gamesteps.Step.COMBAT_DAMAGE:
             # attackers do damage
             self.apply_to_battlefield(
-                lambda p: p.deals_damage(p.status.is_attacking,
-                                         p.power, is_combat=True),
-                lambda p: p.status.is_attacking and (not p.has_ability("First Strike")
-                                                     or p.has_ability("Double Strike")))
+                lambda p: p.deals_damage(
+                    p.status.is_attacking, p.power, is_combat=True
+                ),
+                lambda p: p.status.is_attacking
+                and (
+                    not p.has_ability("First Strike") or p.has_ability("Double Strike")
+                ),
+            )
 
             # blockers do damage
             self.apply_to_battlefield(
-                lambda p: p.deals_damage(p.status.is_blocking,
-                                         p.power, is_combat=True),
-                lambda p: p.status.is_blocking and (not p.has_ability("First Strike")
-                                                    or p.has_ability("Double Strike")))
+                lambda p: p.deals_damage(p.status.is_blocking, p.power, is_combat=True),
+                lambda p: p.status.is_blocking
+                and (
+                    not p.has_ability("First Strike") or p.has_ability("Double Strike")
+                ),
+            )
 
             # damage resolve / triggers
 
         if step is gamesteps.Step.END_OF_COMBAT:
-            self.apply_to_battlefield(
-                lambda p: p.exits_combat())
+            self.apply_to_battlefield(lambda p: p.exits_combat())
             pass
 
         self.handle_priority(step)
@@ -475,17 +504,16 @@ class Game(object):
     def handle_end_phase(self, step):
         if step is gamesteps.Step.END:
             self.apply_to_battlefield(
-                lambda p: p.trigger(triggers.triggerConditions.onEndstep))
+                lambda p: p.trigger(triggers.triggerConditions.onEndstep)
+            )
             self.handle_priority(step)
 
         elif step is gamesteps.Step.CLEANUP:
-            self.current_player.discard(
-                down_to=self.current_player.maxHandSize)
+            self.current_player.discard(down_to=self.current_player.maxHandSize)
             self.apply_to_battlefield(
-                lambda p: p.trigger(triggers.triggerConditions.onCleanup))
+                lambda p: p.trigger(triggers.triggerConditions.onCleanup)
+            )
             self.apply_state_based_actions()
-            
-
 
     def handle_turn(self):
         self.pending_steps = []
@@ -508,7 +536,7 @@ class Game(object):
                 gamesteps.Step.END_OF_COMBAT: self.handle_combat_phase,
                 gamesteps.Step.POSTCOMBAT_MAIN: self.handle_main_phase,
                 gamesteps.Step.END: self.handle_end_phase,
-                gamesteps.Step.CLEANUP: self.handle_end_phase
+                gamesteps.Step.CLEANUP: self.handle_end_phase,
             }[self.step](self.step)
             for _player in self.players_list:
                 _player.mana.clear()
@@ -516,12 +544,9 @@ class Game(object):
         for _player in self.players_list:
             _player.end_turn()
         self.pending_turns.append(self.current_player)
-        self.current_player = self.pending_turns.pop(
-            0)  # cycles to next player's turn
+        self.current_player = self.pending_turns.pop(0)  # cycles to next player's turn
         self.turn_num += 1
         return True
-
-
 
     # debug
 
@@ -562,14 +587,16 @@ class Game(object):
                 break
 
 
-
 def start_game():
     cards.setup_cards()
-    decks = [cards.read_deck('data/decks/deck1.txt'),
-             cards.read_deck('data/decks/deck1.txt')]
+    decks = [
+        cards.read_deck("data/decks/deck1.txt"),
+        cards.read_deck("data/decks/deck1.txt"),
+    ]
     GAME = Game(decks)
     GAME_PREVIOUS_STATE = None
     GAME.run_game()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     start_game()

@@ -16,15 +16,14 @@ from MTG import token
 from MTG.exceptions import *
 
 
-class Player():
+class Player:
     is_player = True
     is_permanent = False
     is_creature = False
     is_land = False
     is_spell = False
 
-    def __init__(self, deck, name='player',
-                 startingLife=20, maxHandSize=7, game=None):
+    def __init__(self, deck, name="player", startingLife=20, maxHandSize=7, game=None):
         self.name = name
         self.game = game
         self.timestamp = -1
@@ -67,7 +66,7 @@ class Player():
         # todo: cost modifier tracker
 
     def __repr__(self):
-        return 'player.Player(name=%r)' % self.name
+        return "player.Player(name=%r)" % self.name
 
     def __str__(self):
         return self.name
@@ -97,7 +96,6 @@ class Player():
     @property
     def stack(self):
         return self.game.stack if self.game else None
-    
 
     def get_zone(self, zone_type):
         return {
@@ -110,65 +108,64 @@ class Player():
             # zone.ZoneType.COMMAND: self.command
         }[zone_type]
 
-
     def get_action(self):
-        """ asks the player to do something
+        """asks the player to do something
 
         this gets called whenever a player has priority
         """
-        answer = 'placeholder'
+        answer = "placeholder"
         _play = None
 
         while answer and _play is None:
             answer = self.make_choice(
                 "What would you like to do? {}{}, {}\n".format(
-                    self.name,
-                    '*' if self.is_active else '',
-                    self.game.step))
+                    self.name, "*" if self.is_active else "", self.game.step
+                )
+            )
 
             if self.game.test:
-                print("\t" + self.name + ", " +
-                      str(self.game.step) + ": " + answer + "\n")
+                print(
+                    "\t" + self.name + ", " + str(self.game.step) + ": " + answer + "\n"
+                )
 
-            if answer == '':
+            if answer == "":
                 break
 
             try:
-
-                if answer == 'print':
+                if answer == "print":
                     self.game.print_game_state()
 
-                elif answer == 'hand':
+                elif answer == "hand":
                     print(self.hand)
 
-                elif answer == 'battlefield':
+                elif answer == "battlefield":
                     print(self.battlefield)
 
-                elif answer == 'graveyard':
+                elif answer == "graveyard":
                     print(self.graveyard)
 
-                elif answer == 'exile':
+                elif answer == "exile":
                     print(self.exile)
 
-                elif answer == 'stack':
+                elif answer == "stack":
                     print(self.game.stack)
 
-                elif answer == 'mana':
+                elif answer == "mana":
                     print(self.mana)
 
                 ## debug
-                elif answer == 'addmana':
-                    self.mana.add_str('WWWWWUUUUUBBBBBRRRRRGGGGG11111')
+                elif answer == "addmana":
+                    self.mana.add_str("WWWWWUUUUUBBBBBRRRRRGGGGG11111")
 
-                elif answer == 'debug':
+                elif answer == "debug":
                     pdb.set_trace()
                     pass
 
-                elif answer[:2] == '__':  # for dev purposes
+                elif answer[:2] == "__":  # for dev purposes
                     exec(answer[2:])
-                    return '__continue'
+                    return "__continue"
 
-                elif answer[0] == 'p':  # playing card from hand
+                elif answer[0] == "p":  # playing card from hand
                     try:
                         # 'p 3' == plays third card in hand
                         num = int(answer[2:])
@@ -179,24 +176,25 @@ class Player():
                         card = self.hand.get_card_by_name(name)
                         assert card
 
-
                     # timing & restrictions
                     can_play = True
                     if card.is_land and self.landPlayed >= self.landPerTurn:
                         can_play = False
 
-                    if not (card.is_instant or card.has_ability('Flash')) and (
-                            self.game.stack
-                            or self.game.step.phase not in [
-                                gamesteps.Phase.PRECOMBAT_MAIN,
-                                gamesteps.Phase.POSTCOMBAT_MAIN]
-                            or not self.is_active):
+                    if not (card.is_instant or card.has_ability("Flash")) and (
+                        self.game.stack
+                        or self.game.step.phase
+                        not in [
+                            gamesteps.Phase.PRECOMBAT_MAIN,
+                            gamesteps.Phase.POSTCOMBAT_MAIN,
+                        ]
+                        or not self.is_active
+                    ):
                         can_play = False
 
                     # choose targets
                     if can_play:
                         can_target = card.targets()
-
 
                     # pay mana costs
                     if can_play and can_target:
@@ -206,23 +204,32 @@ class Player():
 
                         if card.has_ability("Convoke"):
                             untapped_creatures = [
-                                c for c in self.creatures if not c.status.tapped]
+                                c for c in self.creatures if not c.status.tapped
+                            ]
                             print("Your creatures: {}".format(untapped_creatures))
-                            ans = self.make_choice("What creatures would you like to tap"
-                                                   " to pay for %s? (Convoke) " % card)
+                            ans = self.make_choice(
+                                "What creatures would you like to tap"
+                                " to pay for %s? (Convoke) " % card
+                            )
 
                             ans = ans.split(" ")
                             for ind in ans:
                                 try:
                                     ind = int(ind)
                                     _creature = untapped_creatures[ind]
-                                    if not _creature.status.tapped and _creature not in creatures_to_tap:
+                                    if (
+                                        not _creature.status.tapped
+                                        and _creature not in creatures_to_tap
+                                    ):
                                         color = _creature.characteristics.color
                                         if not color:
-                                            color = 'C'
+                                            color = "C"
                                         elif len(color) > 1:
                                             color = self.make_choice(
-                                                "What color would you like to add? {}".format(color))
+                                                "What color would you like to add? {}".format(
+                                                    color
+                                                )
+                                            )
                                             assert color in mana.manachr
                                         else:
                                             color = color[0]
@@ -241,7 +248,7 @@ class Player():
                                     print("error processing creature for convoke")
                                     pass
 
-                        can_pay = self.mana.canPay(cost) 
+                        can_pay = self.mana.canPay(cost)
 
                     if can_play and can_target and can_pay:
                         self.hand.remove(card)
@@ -249,9 +256,12 @@ class Player():
                         for _creature in creatures_to_tap:
                             _creature.tap()
 
-                        print("{} playing {} targeting {}\n".format(self, card, card.targets_chosen))
-                        _play = play.Play(card.play_func,
-                                          card=card)
+                        print(
+                            "{} playing {} targeting {}\n".format(
+                                self, card, card.targets_chosen
+                            )
+                        )
+                        _play = play.Play(card.play_func, card=card)
                         # special actions
                         if card.is_land:
                             _play.is_special_action = True
@@ -267,8 +277,8 @@ class Player():
 
                 # activate ability from battlefield -- 'a 3_1' plays 2nd (index starts at 0) ability from 3rd permanent
                 # 'a 3' playrs 1st (default) ability of the 3rd permanent
-                elif answer[:2] == 'a ':
-                    nums = answer[2:].split('_')
+                elif answer[:2] == "a ":
+                    nums = answer[2:].split("_")
                     if len(nums) == 1:
                         nums.append(0)
 
@@ -293,13 +303,13 @@ class Player():
                         raise ResetGameException
 
                 # skip priority until something happens / certain step
-                elif answer[:2] == 's ':
-                    if answer[2:] == 'main':
-                        answer = 's precombat_main'
-                    if answer[2:] == 'main2':
-                        answer = 's postcombat_main'
-                    if answer[2:] == 'combat':
-                        answer = 's beginning_of_combat'
+                elif answer[:2] == "s ":
+                    if answer[2:] == "main":
+                        answer = "s precombat_main"
+                    if answer[2:] == "main2":
+                        answer = "s postcombat_main"
+                    if answer[2:] == "combat":
+                        answer = "s beginning_of_combat"
                     assert answer[2:].upper() in gamesteps.Step._member_names_
                     self.passPriorityUntil = gamesteps.Step[answer[2:].upper()]
                     break
@@ -321,7 +331,7 @@ class Player():
     # separate func for unit testing
     def make_choice(self, prompt_string):
         ans = input(prompt_string)
-        if ans == 'debug':  # TODO: only enable during dev
+        if ans == "debug":  # TODO: only enable during dev
             pdb.set_trace()
 
         if not self.game or self.game.test:  # for debug
@@ -365,9 +375,8 @@ class Player():
 
         return chosen
 
-
     def add_static_effect(self, name, value, source, toggle_func, exempt_source=False):
-        """ toggle_func: condition func on which permanents the static effect affects -- lambda eff: True
+        """toggle_func: condition func on which permanents the static effect affects -- lambda eff: True
 
         e.g. lambda eff: eff.source.is_creature applies to all creatures
 
@@ -375,17 +384,20 @@ class Player():
         """
         self.static_effects.append((name, value, source, toggle_func))
         for p in self.battlefield:
-            p.add_effect(name, value, source=source, is_active=False, toggle_func=toggle_func)
+            p.add_effect(
+                name, value, source=source, is_active=False, toggle_func=toggle_func
+            )
 
         if not exempt_source:  # when this func is called during permanent.__init__(),
-                               # the card isn't on the battlefield yet. 
-            source.add_effect(name, value, source=source, is_active=False, toggle_func=toggle_func)
+            # the card isn't on the battlefield yet.
+            source.add_effect(
+                name, value, source=source, is_active=False, toggle_func=toggle_func
+            )
 
     def remove_static_effect(self, source):
-        """ remove all effects from a certain source """
+        """remove all effects from a certain source"""
         self.static_effects = [eff for eff in self.static_effects if eff[2] != source]
         # each permanent should auto-remove since source's timestamp has changed
-
 
     def trigger(self, condition, source=None, amount=1):
         """Pass player-init triggers to relevant permanents
@@ -396,15 +408,18 @@ class Player():
             condition = triggers.triggerConditions[condition]
 
         if condition == triggers.triggerConditions.onUpkeep:
+
             def f(p):
                 p.status.summoning_sick = False
+
             self.apply_to_battlefield(f)
 
         elif condition == triggers.triggerConditions.onCleanup:
+
             def f(p):
                 p.status.damage_taken = 0
-            self.apply_to_battlefield(f)
 
+            self.apply_to_battlefield(f)
 
         if condition in self.trigger_listeners:
             # make copy so we can remove while iterating
@@ -414,7 +429,6 @@ class Player():
                 else:  # expired
                     print("player-based trigger {} expired".format((p, tstamp)))
                     self.trigger_listeners[condition].remove((p, tstamp))
-
 
     def play_card(self, card):
         if isinstance(card, str):  # convert card name to Card object
@@ -428,8 +442,8 @@ class Player():
 
     def draw(self, num=1):
         # TODO: multiple draw triggers?
-        self.trigger('onControllerDrawCard')
-        self.game.trigger('onDrawCard')
+        self.trigger("onControllerDrawCard")
+        self.game.trigger("onDrawCard")
         for i in range(num):
             try:
                 card = self.library.pop()
@@ -438,14 +452,16 @@ class Player():
                 raise EmptyLibraryException()
 
     def add_card_to_hand(self, card):
-        """ draw a specific card
+        """draw a specific card
 
         card is either a string (name of card) or a Card object
         """
         self.hand.add(card)
 
-    def search_lib(self, criteria_funcs, num=1, target_zone='hand', todo_func=None, face_up=True):
-        """ criteria_funcs validates the searched set
+    def search_lib(
+        self, criteria_funcs, num=1, target_zone="hand", todo_func=None, face_up=True
+    ):
+        """criteria_funcs validates the searched set
 
         If num=1 (searching one card), then that's just the validating function
 
@@ -465,7 +481,7 @@ class Player():
         ]
         """
 
-        if target_zone == 'hand':
+        if target_zone == "hand":
             target_zone = self.hand
 
         if num == 1 or type(criteria_funcs) != list:
@@ -497,8 +513,8 @@ class Player():
         If down_to is specified, number is ignored and set to len(self.hand) - down_to
         """
 
-        self.trigger('onControllerDiscard')
-        self.trigger('onPlayerDiscard')
+        self.trigger("onControllerDiscard")
+        self.trigger("onPlayerDiscard")
 
         if num == -1:
             num = len(self.hand)  # -1 to discard whole hand
@@ -520,7 +536,9 @@ class Player():
         else:
             # prompt player pick which cards
             answer = self.make_choice(
-                "%r\nWhich cards would you like to discard? (discarding %i) \n" % (self.hand, num))
+                "%r\nWhich cards would you like to discard? (discarding %i) \n"
+                % (self.hand, num)
+            )
             cards_to_discard = []
 
             if not answer:  # '' to auto discard
@@ -551,11 +569,20 @@ class Player():
             self.graveyard.add(self.library.pop())
         return True
 
-    def create_token(self, attributes, num=1, keyword_abilities=[], activated_abilities=[]):
-        token.create_token(attributes, self, num, keyword_abilities, activated_abilities)
+    def create_token(
+        self, attributes, num=1, keyword_abilities=[], activated_abilities=[]
+    ):
+        token.create_token(
+            attributes, self, num, keyword_abilities, activated_abilities
+        )
 
     def investigate(self, num=1):
-        self.create_token('colorless Clue artifact', num, [], [['2, T, Sacrifice ~', 'self.controller.draw()']])
+        self.create_token(
+            "colorless Clue artifact",
+            num,
+            [],
+            [["2, T, Sacrifice ~", "self.controller.draw()"]],
+        )
 
     def boolster(self, num=1):
         creatures = [(p, p.toughness) for p in self.battlefield if p.is_creature]
@@ -584,8 +611,6 @@ class Player():
         print("Bolstering {}".format(target))
         target.add_counter("+1/+1", num)
 
-
-
     def sacrifice(self, num=1, filter_func=lambda p: p.is_creature):
         if num <= 0:
             return True
@@ -594,8 +619,10 @@ class Player():
         if not avaliable_targets or len(avaliable_targets) > num:
             return False
 
-        ans = self.make_choice("Avaliable permanents: %s\nWhat would you like to sacrifice? (need %d)"
-                               % (avaliable_targets, num))
+        ans = self.make_choice(
+            "Avaliable permanents: %s\nWhat would you like to sacrifice? (need %d)"
+            % (avaliable_targets, num)
+        )
 
         if not ans:
             return False
@@ -626,7 +653,6 @@ class Player():
 
         return sacs
 
-
     # TODO: handle paying X life / X mana
     def pay(self, mana=None, life=0):
         """
@@ -654,21 +680,21 @@ class Player():
         self.trigger(triggers.triggerConditions.onControllerLifeGain, amount=amount)
         self.game.trigger(triggers.triggerConditions.onLifeGain, amount=amount)
 
-        if self.turn_events['life gain']:
-            self.turn_events['life gain'] += amount
+        if self.turn_events["life gain"]:
+            self.turn_events["life gain"] += amount
         else:
-            self.turn_events['life gain'] = amount
+            self.turn_events["life gain"] = amount
         print("%r: gaining %i life\n" % (self, amount))
         self.life += amount
 
     def lose_life(self, amount):
-        self.trigger('onLifeLoss', amount=amount)
-        self.game.trigger('onControllerLifeLoss', amount=amount)
+        self.trigger("onLifeLoss", amount=amount)
+        self.game.trigger("onControllerLifeLoss", amount=amount)
 
-        if self.turn_events['life loss']:
-            self.turn_events['life loss'] += amount
+        if self.turn_events["life loss"]:
+            self.turn_events["life loss"] += amount
         else:
-            self.turn_events['life loss'] = amount
+            self.turn_events["life loss"] = amount
 
         self.life -= amount
 
@@ -683,11 +709,12 @@ class Player():
         self.turn_events = defaultdict(lambda: None)
 
     def controls(self, subtype=None, types=None, supertype=None):
-        """ shortcut for checking whether a player controls something (e.g. Island, Goblin) """
+        """shortcut for checking whether a player controls something (e.g. Island, Goblin)"""
         filt = set()
         if subtype:
             f = self.battlefield.filter(
-                       filter_func=lambda p: subtype in p.characteristics.subtype)
+                filter_func=lambda p: subtype in p.characteristics.subtype
+            )
             if not filt:
                 filt = f
             else:
@@ -695,7 +722,8 @@ class Player():
 
         if types:
             f = self.battlefield.filter(
-                       filter_func=lambda p: types in p.characteristics.types)
+                filter_func=lambda p: types in p.characteristics.types
+            )
             if not filt:
                 filt = f
             else:
@@ -703,7 +731,8 @@ class Player():
 
         if supertype:
             f = self.battlefield.filter(
-                       filter_func=lambda p: supertype in p.characteristics.supertype)
+                filter_func=lambda p: supertype in p.characteristics.supertype
+            )
             if not filt:
                 filt = f
             else:
@@ -731,15 +760,12 @@ class Player():
 
         return did_something
 
-
     def apply_to_battlefield(self, apply_func, condition=lambda p: True):
         return self.apply_to_zone(apply_func, zone.ZoneType.BATTLEFIELD, condition)
-
 
     def lose(self):
         print("{} has lost the game\n".format(self))
         self.lost = True
-
 
     def print_player_state(self):
         print("\nPLAYER {}\nlife: {}\n".format(self.name, self.life))

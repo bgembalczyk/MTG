@@ -2,6 +2,7 @@
 
 from enum import Enum
 
+
 class StaticAbilities(Enum):
     Deathtouch = 0
     Defender = 1
@@ -27,6 +28,5 @@ class StaticAbilities(Enum):
     Forestwalk = 21
 
     # TODO: protection
-
 
     Convoke = 30

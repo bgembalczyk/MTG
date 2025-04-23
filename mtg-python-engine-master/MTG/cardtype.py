@@ -5,6 +5,7 @@ from enum import Enum
 
 class SuperType(Enum):
     """Represents supertypes of cards in the game"""
+
     BASIC = 0
     LEGENDARY = 1
     SNOW = 2
@@ -13,6 +14,7 @@ class SuperType(Enum):
 
 class CardType(Enum):
     """Represents types of cards in the game"""
+
     ARTIFACT = 0
     CREATURE = 1
     ENCHANTMENT = 2
@@ -25,6 +27,7 @@ class CardType(Enum):
 
 class LandType(Enum):
     """Represents types of lands"""
+
     PLAINS = 0
     ISLAND = 1
     SWAMP = 2

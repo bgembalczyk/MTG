@@ -19,23 +19,24 @@ class ZoneType(Enum):
     EXILE = 5
     # COMMAND = 6
 
+
 def str_to_zone_type(z):
     return {
-        'library': ZoneType.LIBRARY,
-        'hand': ZoneType.HAND,
-        'battlefield': ZoneType.BATTLEFIELD,
-        'graveyard': ZoneType.GRAVEYARD,
-        'stack': ZoneType.STACK,
-        'exile': ZoneType.EXILE
+        "library": ZoneType.LIBRARY,
+        "hand": ZoneType.HAND,
+        "battlefield": ZoneType.BATTLEFIELD,
+        "graveyard": ZoneType.GRAVEYARD,
+        "stack": ZoneType.STACK,
+        "exile": ZoneType.EXILE,
     }[z.lower()]
 
 
-class Zone():
+class Zone:
     is_library = False
     is_battlefield = False
     is_public = False
 
-    def __init__(self, controller=None, elements: list=None):
+    def __init__(self, controller=None, elements: list = None):
         if elements is None:
             self.elements = []
         else:
@@ -47,15 +48,20 @@ class Zone():
             self.game = self.controller.game
 
     def __repr__(self):
-        return 'zone.Zone %r controlled by %r len=%s\n%r' % (self.__class__.__name__,
-                                                             self.controller, len(self), self.elements)
+        return "zone.Zone %r controlled by %r len=%s\n%r" % (
+            self.__class__.__name__,
+            self.controller,
+            len(self),
+            self.elements,
+        )
 
     def __str__(self):
-        return '%s\'s %s (%s cards)\n%s' % (self.controller, 
-                                            self.__class__.__name__,
-                                            len(self), 
-                                            [ele.name for ele in self.elements])
-
+        return "%s's %s (%s cards)\n%s" % (
+            self.controller,
+            self.__class__.__name__,
+            len(self),
+            [ele.name for ele in self.elements],
+        )
 
     def __len__(self):
         return len(self.elements)
@@ -110,8 +116,9 @@ class Zone():
                     found.add(ele)
 
         else:
-            assert (characteristics is None
-                    or isinstance(characteristics, gameobject.Characteristics))
+            assert characteristics is None or isinstance(
+                characteristics, gameobject.Characteristics
+            )
 
             for ele in self:
                 if ele.characteristics.satisfy(characteristics):
@@ -138,7 +145,7 @@ class Zone():
 
 
 class Battlefield(Zone):
-    zone_type = 'BATTLEFIELD'
+    zone_type = "BATTLEFIELD"
     is_battlefield = True
     is_public = True
 
@@ -146,7 +153,6 @@ class Battlefield(Zone):
         if type(obj) is str:  # convert string (card's name) to a Card object
             obj = cards.card_from_name(obj)
         obj.controller = self.controller
-
 
         if isinstance(obj, card.Card):  # convert card to Permanent
             # this will call Battlefield.add(...) again
@@ -157,63 +163,62 @@ class Battlefield(Zone):
             self.elements.append(obj)
             obj.status.reset()  # reset status upon entering battlefield
             if status_mod:
-                if 'tapped' in status_mod:
+                if "tapped" in status_mod:
                     status.tapped = True
-            
+
             if modi_func:  # apply "enter the battlefield with ..." effects: e.g. tapped
                 modi_func(self)
 
-            obj.trigger('onEtB', obj)
-            obj.controller.trigger('onControllerPermanentEtB', obj)
-            obj.game.trigger('onPermanentEtB', obj)
+            obj.trigger("onEtB", obj)
+            obj.controller.trigger("onControllerPermanentEtB", obj)
+            obj.game.trigger("onPermanentEtB", obj)
             if obj.is_creature:
-                obj.controller.trigger('onControllerCreatureEtB', obj)
-                obj.game.trigger('onCreatureEtB', obj)
+                obj.controller.trigger("onControllerCreatureEtB", obj)
+                obj.game.trigger("onCreatureEtB", obj)
 
 
 class Stack(Zone):
-    zone_type = 'STACK'
+    zone_type = "STACK"
     is_public = True
 
-    #TODO: move stack printing here (from game.py)
+    # TODO: move stack printing here (from game.py)
     pass
 
 
 class Hand(Zone):
-    zone_type = 'HAND'
+    zone_type = "HAND"
     is_public = False
     pass
 
 
 class Graveyard(Zone):
-    zone_type = 'GRAVEYARD'
+    zone_type = "GRAVEYARD"
     is_public = True
     pass
 
 
 class Exile(Zone):
-    zone_type = 'EXILE'
+    zone_type = "EXILE"
     is_public = True
     pass
 
 
 class Library(Zone):
-    zone_type = 'LIBRARY'
+    zone_type = "LIBRARY"
     is_library = True
     is_public = False
 
     def shuffle(self):
         random.shuffle(self.elements)
 
-    def __init__(self, controller=None, elements: list=None):
+    def __init__(self, controller=None, elements: list = None):
         super(Library, self).__init__(controller, elements)
         for ele in self.elements:
             ele.zone = self
         self.shuffle()
 
-
     def add(self, obj, from_top=0, shuffle=True):
-        """ Note: the library is reversed; i.e. self.elements[0] is the last card
+        """Note: the library is reversed; i.e. self.elements[0] is the last card
 
         When you draw, you draw from self.pop(), or self.elements[-1]
         """
@@ -228,7 +233,9 @@ class Library(Zone):
         elif from_top == -1:  # put on bottom
             self.elements = [obj] + self.elements
         else:
-            self.elements = self.elements[:-from_top] + [obj] + self.elements[-from_top:]
+            self.elements = (
+                self.elements[:-from_top] + [obj] + self.elements[-from_top:]
+            )
 
         if shuffle:
             self.shuffle()
@@ -240,5 +247,3 @@ class Library(Zone):
             self.shuffle()
 
         return super(Library, self).remove(obj)
-
-

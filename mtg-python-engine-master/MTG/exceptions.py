@@ -1,19 +1,25 @@
 # https://github.com/wanqizhu/mtg-python-engine
 
+
 class BadFormatException(Exception):
     pass
+
 
 class GameOverException(Exception):
     pass
 
+
 class EmptyLibraryException(Exception):
     pass
 
+
 class DeckListFormatException(Exception):
-	pass
+    pass
+
 
 class ResetGameException(Exception):
-	pass
+    pass
+
 
 class CardNotImplementedException(Exception):
-	pass
+    pass
