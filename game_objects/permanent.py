@@ -8,16 +8,14 @@ from players.player import Player
 from status.status import Status, Tap, Flip, Facing, Phasing
 
 
-class PermanentObject(GameObject):
+class PermanentMixin:
     """
-    An object’s characteristics are name, mana cost, color, color indicator, card type, subtype, supertype, rules text,
-    abilities, power, toughness, loyalty, defense, hand modifier, and life modifier.
+    Mixin dodający właściwości stałych obiektów: name, mana_cost, colors.
     """
-
-    def __init__(self, name: Name, mana_cost: ManaCost, rules_text: str):
-        super().__init__(rules_text=rules_text)
+    def __init__(self, name: Name, mana_cost: ManaCost, *args, **kwargs):
         self._name = name
         self._mana_cost = mana_cost
+        super().__init__(*args, **kwargs)
 
     @property
     def name(self) -> Name:
@@ -32,22 +30,24 @@ class PermanentObject(GameObject):
         return self.mana_cost.colors
 
     def get_characteristics(self) -> dict:
-        characteristics = super().get_characteristics()
-        characteristics.update(
-            {
-                "name": self.name,
-                "mana cost": self.mana_cost,
-                "colors": sorted(self.colors),
-            }
-        )
-        return characteristics
+        base = {}
+        if hasattr(super(), "get_characteristics"):
+            base = super().get_characteristics()
+        base.update({
+            "name": self.name,
+            "mana cost": self.mana_cost,
+            "colors": sorted(self.colors),
+        })
+        return base
 
 
-class PermanentCard(PermanentObject, Card):
-    pass
+class PermanentCard(PermanentMixin, Card):
+    def __init__(self, name: Name, mana_cost: ManaCost, rules_text: str, *args, **kwargs):
+        # Jawne przekazanie argumentów 'name' i 'mana_cost' do konstruktora Card
+        super().__init__(name=name, mana_cost=mana_cost, rules_text=rules_text, *args, **kwargs)
 
 
-class PermanentSpell(PermanentObject, Spell):
+class PermanentSpell(PermanentMixin, Spell):
     def __init__(
         self,
         owner: Player,
@@ -55,13 +55,16 @@ class PermanentSpell(PermanentObject, Spell):
         name: Name,
         mana_cost: ManaCost,
         rules_text: str,
+        *args,
+        **kwargs
     ):
-        super().__init__(name=name, mana_cost=mana_cost, rules_text=rules_text)
+        # Wywołanie konstruktora Spell z odpowiednimi argumentami
+        super().__init__(name=name, mana_cost=mana_cost, rules_text=rules_text, *args, **kwargs)
         self._owner = owner
         self._controller = controller
 
 
-class Permanent(PermanentObject):
+class Permanent(PermanentMixin, GameObject):
     def __init__(
         self,
         owner: Player,
@@ -69,11 +72,13 @@ class Permanent(PermanentObject):
         name: Name,
         mana_cost: ManaCost,
         rules_text: str,
+        *args,
+        **kwargs
     ):
-        super().__init__(name=name, mana_cost=mana_cost, rules_text=rules_text)
         self._status = Status()
         self._owner = owner
         self._controller = controller
+        super().__init__(name=name, mana_cost=mana_cost, rules_text=rules_text, *args, **kwargs)
 
     @property
     def status(self) -> Status:
@@ -86,16 +91,10 @@ class Permanent(PermanentObject):
         self._status.tap = Tap.UNTAPPED
 
     def flip(self):
-        if self._status.flip == Flip.UNFLIPPED:
-            self._status.flip = Flip.FLIPPED
-        else:
-            self._status.flip = Flip.UNFLIPPED
+        self._status.flip = Flip.FLIPPED if self._status.flip == Flip.UNFLIPPED else Flip.UNFLIPPED
 
     def switch_facing(self):
-        if self._status.facing == Facing.FACE_UP:
-            self._status.facing = Facing.FACE_DOWN
-        else:
-            self._status.facing = Facing.FACE_UP
+        self._status.facing = Facing.FACE_DOWN if self._status.facing == Facing.FACE_UP else Facing.FACE_UP
 
     def phase_out(self):
         self._status.phasing = Phasing.PHASED_OUT

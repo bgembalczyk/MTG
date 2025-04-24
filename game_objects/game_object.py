@@ -4,7 +4,7 @@ class GameObject:
     abilities, power, toughness, loyalty, defense, hand modifier, and life modifier.
     """
 
-    def __init__(self, rules_text: str):
+    def __init__(self, rules_text: str, *args, **kwargs):
         self._owner = None
         self._controller = None
         self._rules_text = rules_text

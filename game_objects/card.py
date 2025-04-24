@@ -5,15 +5,10 @@ from game_objects.game_object import GameObject
 
 
 class Card(GameObject):
-    """
-    An object’s characteristics are name, mana cost, color, color indicator, card type, subtype, supertype, rules text,
-    abilities, power, toughness, loyalty, defense, hand modifier, and life modifier.
-    """
-
-    def __init__(self, name: Name, mana_cost: ManaCost, rules_text: str):
-        super().__init__(rules_text=rules_text)
+    def __init__(self, name: Name, mana_cost: ManaCost, rules_text: str, *args, **kwargs):
         self._name = name
         self._mana_cost = mana_cost
+        super().__init__(rules_text=rules_text, *args, **kwargs)
 
     @property
     def name(self) -> Name:

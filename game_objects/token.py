@@ -1,5 +1,5 @@
-from game_objects.permanent import PermanentObject
+from game_objects.permanent import PermanentMixin
 
 
-class TokenObject(PermanentObject):
+class TokenObject(PermanentMixin):
     pass
