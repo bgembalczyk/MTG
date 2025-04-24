@@ -12,10 +12,11 @@ class PermanentMixin:
     """
     Mixin dodający właściwości stałych obiektów: name, mana_cost, colors.
     """
+
     def __init__(self, name: Name, mana_cost: ManaCost, *args, **kwargs):
+        super().__init__(*args, **kwargs)  # Pass all args/kwargs to super()
         self._name = name
         self._mana_cost = mana_cost
-        super().__init__(*args, **kwargs)
 
     @property
     def name(self) -> Name:
@@ -27,24 +28,29 @@ class PermanentMixin:
 
     @property
     def colors(self) -> set:
-        return self.mana_cost.colors
+        return self.mana_cost.colors if self.mana_cost else set()
 
     def get_characteristics(self) -> dict:
         base = {}
         if hasattr(super(), "get_characteristics"):
             base = super().get_characteristics()
-        base.update({
-            "name": self.name,
-            "mana cost": self.mana_cost,
-            "colors": sorted(self.colors),
-        })
+        base.update(
+            {
+                "name": self.name,
+                "mana cost": self.mana_cost,
+                "colors": self.colors,
+            }
+        )
         return base
 
 
 class PermanentCard(PermanentMixin, Card):
-    def __init__(self, name: Name, mana_cost: ManaCost, rules_text: str, *args, **kwargs):
-        # Jawne przekazanie argumentów 'name' i 'mana_cost' do konstruktora Card
-        super().__init__(name=name, mana_cost=mana_cost, rules_text=rules_text, *args, **kwargs)
+    def __init__(
+        self, name: Name, mana_cost: ManaCost, rules_text: str, *args, **kwargs
+    ):
+        super().__init__(
+            name=name, mana_cost=mana_cost, rules_text=rules_text, *args, **kwargs
+        )
 
 
 class PermanentSpell(PermanentMixin, Spell):
@@ -56,10 +62,18 @@ class PermanentSpell(PermanentMixin, Spell):
         mana_cost: ManaCost,
         rules_text: str,
         *args,
-        **kwargs
+        **kwargs,
     ):
         # Wywołanie konstruktora Spell z odpowiednimi argumentami
-        super().__init__(name=name, mana_cost=mana_cost, rules_text=rules_text, *args, **kwargs)
+        super().__init__(
+            name=name,
+            owner=owner,
+            controller=controller,
+            mana_cost=mana_cost,
+            rules_text=rules_text,
+            *args,
+            **kwargs,
+        )
         self._owner = owner
         self._controller = controller
 
@@ -73,12 +87,14 @@ class Permanent(PermanentMixin, GameObject):
         mana_cost: ManaCost,
         rules_text: str,
         *args,
-        **kwargs
+        **kwargs,
     ):
         self._status = Status()
         self._owner = owner
         self._controller = controller
-        super().__init__(name=name, mana_cost=mana_cost, rules_text=rules_text, *args, **kwargs)
+        super().__init__(
+            name=name, mana_cost=mana_cost, rules_text=rules_text, *args, **kwargs
+        )
 
     @property
     def status(self) -> Status:
@@ -91,10 +107,16 @@ class Permanent(PermanentMixin, GameObject):
         self._status.tap = Tap.UNTAPPED
 
     def flip(self):
-        self._status.flip = Flip.FLIPPED if self._status.flip == Flip.UNFLIPPED else Flip.UNFLIPPED
+        self._status.flip = (
+            Flip.FLIPPED if self._status.flip == Flip.UNFLIPPED else Flip.UNFLIPPED
+        )
 
     def switch_facing(self):
-        self._status.facing = Facing.FACE_DOWN if self._status.facing == Facing.FACE_UP else Facing.FACE_UP
+        self._status.facing = (
+            Facing.FACE_DOWN
+            if self._status.facing == Facing.FACE_UP
+            else Facing.FACE_UP
+        )
 
     def phase_out(self):
         self._status.phasing = Phasing.PHASED_OUT

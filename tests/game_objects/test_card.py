@@ -47,7 +47,7 @@ def test_get_characteristics(example_card):
     expected_characteristics = {
         "name": example_card.name,
         "mana cost": example_card.mana_cost,
-        "colors": [Color.RED],
+        "colors": {Color.RED},
         "rules_text": example_card.rules_text,
     }
     # Sprawdzamy, czy metoda get_characteristics zwraca poprawne dane

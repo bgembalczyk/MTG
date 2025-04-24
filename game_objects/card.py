@@ -5,10 +5,22 @@ from game_objects.game_object import GameObject
 
 
 class Card(GameObject):
-    def __init__(self, name: Name, mana_cost: ManaCost, rules_text: str, *args, **kwargs):
+    def __init__(
+        self,
+        name: Name = None,
+        mana_cost: ManaCost = None,
+        rules_text: str = None,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(
+            rules_text=rules_text, *args, **kwargs
+        )  # GameObject takes rules_text
+
         self._name = name
         self._mana_cost = mana_cost
-        super().__init__(rules_text=rules_text, *args, **kwargs)
+        if rules_text is not None:
+            self._rules_text = rules_text
 
     @property
     def name(self) -> Name:
@@ -20,7 +32,7 @@ class Card(GameObject):
 
     @property
     def colors(self) -> set:
-        return self.mana_cost.colors
+        return self.mana_cost.colors if self.mana_cost else set()  # Safe access
 
     def get_characteristics(self) -> dict:
         characteristics = super().get_characteristics()
@@ -28,7 +40,7 @@ class Card(GameObject):
             {
                 "name": self.name,
                 "mana cost": self.mana_cost,
-                "colors": sorted(self.colors),
+                "colors": self.colors,
             }
         )
         return characteristics
